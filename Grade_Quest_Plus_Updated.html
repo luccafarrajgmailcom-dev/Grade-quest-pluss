@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Grade Quest Plus</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f8fafc;background:#111827}
+*{box-sizing:border-box}body{margin:0;padding:20px;max-width:760px;margin:auto}
+header{padding:20px 0}h1{margin:0 0 8px;font-size:2rem}p{color:#cbd5e1;line-height:1.45}
+.card{background:#1f2937;border:1px solid #374151;border-radius:18px;padding:18px;margin:14px 0}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.xp{font-size:2rem;font-weight:800;color:#fbbf24}
+button{background:#fbbf24;color:#111827;border:0;border-radius:12px;padding:12px 14px;font-size:1rem;font-weight:750;cursor:pointer}
+button.secondary{background:#374151;color:#f9fafb}button:disabled{opacity:.45;cursor:not-allowed}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid #64748b;background:#111827;color:white;font-size:1rem;margin:6px 0 12px}
+.prize{border-top:1px solid #374151;padding:14px 0}.prize:first-child{border-top:0}
+small{color:#cbd5e1}.notice{color:#fde68a;font-size:.92rem}
+</style>
+</head>
+<body>
+<header><h1>⚔️ Grade Quest Plus</h1><p>Your study effort earns XP. This version uses your higher prize costs.</p></header>
+<section class="card">
+<div class="row"><strong>Available XP</strong><span class="xp" id="xp">418</span></div>
+<p id="rank">Rank: Silver (demo rank)</p>
+<label for="start">Starting XP (edit if your balance is different)</label>
+<input id="start" type="number" min="0" value="418">
+<button class="secondary" id="set">Update balance</button>
+<p class="notice">This standalone file saves progress in this browser on this device. It does not sync between devices.</p>
+</section>
+<section class="card"><h2>🎁 Prize shop</h2><p>Spend XP to claim a break. Costs follow the plan you requested.</p><p class="notice">V-Bucks and the Call of Duty game require parent or guardian approval. XP only unlocks a reward request; it does not make a purchase.</p><div id="prizes"></div></section>
+<section class="card"><h2>🏅 Rank goals</h2><div id="ranks"></div></section>
+<section class="card"><h2>📚 Study missions</h2><p>Mark a mission after you genuinely finish it.</p>
+<label><input type="checkbox" class="mission" value="25"> Skim math notes (+25 XP)</label><br>
+<label><input type="checkbox" class="mission" value="50"> Review science (+50 XP)</label><br>
+<label><input type="checkbox" class="mission" value="50"> Finish homework for one class (+50 XP)</label><br>
+<button id="claimMissions">Claim checked mission XP</button><p id="missionMsg"></p></section>
+<script>
+const prizeList=[["15 minutes",200],["30 minutes",500],["1 hour",700],["1.5 hours",1000],["2 hours",1600],["Parent-approved V-Bucks reward",3500],["Parent-approved Call of Duty game",10000]];
+const rankList=[["Bronze",0],["Silver",150],["Gold",350],["Platinum",700],["Diamond",1200]];
+let xp=Number(localStorage.getItem("gqp_xp") ?? 418);
+let usedMissions=JSON.parse(localStorage.getItem("gqp_missions")||"[]");
+function save(){localStorage.setItem("gqp_xp",String(xp));localStorage.setItem("gqp_missions",JSON.stringify(usedMissions));render();}
+function render(){
+ document.getElementById("xp").textContent=xp;
+ document.getElementById("start").value=xp;
+ const rank=rankList.filter(r=>xp>=r[1]).slice(-1)[0];
+ document.getElementById("rank").textContent="Current rank: "+rank[0]+" (based on demo rank costs)";
+ document.getElementById("prizes").innerHTML=prizeList.map(([name,cost],i)=>`<div class="prize row"><div><strong>${name}</strong><br><small>Cost: ${cost} XP</small></div><button ${xp<cost?"disabled":""} onclick="buy(${i})">Claim</button></div>`).join("");
+ document.getElementById("ranks").innerHTML=rankList.map(([name,cost])=>`<p><strong>${name}</strong> — ${cost} XP ${xp>=cost?"✓ unlocked":"· "+(cost-xp)+" XP to go"}</p>`).join("");
+ document.querySelectorAll(".mission").forEach((el,i)=>{el.checked=false;el.disabled=usedMissions.includes(i)});
+}
+function buy(i){let [name,cost]=prizeList[i];if(xp<cost)return;if(i>=5&&!confirm(`${name} needs your parent or guardian's approval and may require a separate purchase. XP only unlocks the reward; it does not buy anything. Continue to mark it as requested?`))return;if(!confirm(`Spend ${cost} XP on ${name}?`))return;xp-=cost;save();if(i>=5){alert(`Reward request unlocked: ${name}. Ask your parent or guardian for approval. No purchase was made.`);}else{alert(`Prize claimed: ${name}. Remember to follow your family's screen-time rules.`);}}
+document.getElementById("set").onclick=()=>{let n=Number(document.getElementById("start").value);if(Number.isFinite(n)&&n>=0){xp=Math.floor(n);save();}};
+document.getElementById("claimMissions").onclick=()=>{let els=[...document.querySelectorAll(".mission")],earned=0;els.forEach((el,i)=>{if(el.checked&&!usedMissions.includes(i)){earned+=Number(el.value);usedMissions.push(i);}});if(earned===0){document.getElementById("missionMsg").textContent="Select a finished mission that you haven't claimed yet.";return;}xp+=earned;save();document.getElementById("missionMsg").textContent=`Added ${earned} XP. Only claim work you've actually completed.`;};
+render();
+</script>
+</body></html>
